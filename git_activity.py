@@ -34,12 +34,14 @@ TODAY = datetime.date.today()
 DUMMY_GAD = (TODAY, {'~/path_one': 0, '~/path_two': 1, '~/path_three': 2})
 
 COLORWAYS = [
+    [236, 94, 136, 172, 208], # oranges
     [236, 58, 100, 142, 184], # yellows
     [236, 22, 28, 34, 40],    # greens
     [236, 23, 30, 37, 44],    # cyans
     [236, 53, 90, 127, 164],  # purples
     [236, 17, 18, 19, 20],    # blues
     [236, 52, 88, 124, 160],  # reds
+    [236, 238, 241, 248, 255],# grays
 ]
 
 DEFAULT_COLOR = 244
@@ -167,11 +169,9 @@ def auto_detect_top_authors(repositories, since, quantity):
 
 def generate_legend(repositories):
     """Generate a legend for the provided list of repositories."""
-    assert len(repositories) < len(COLORWAYS), \
-        "Too many repositories for the available colorways."
     legend = []
     for index, value in enumerate({repo: 0 for repo in repositories}.keys()):
-        legend.append(render_colored_block_string(COLORWAYS[index][4])[0][0] + " " +
+        legend.append(render_colored_block_string(COLORWAYS[index % (len(COLORWAYS) - 1)][4])[0][0] + " " +
                       colorize_string(os.path.basename(value.rstrip('/')), DEFAULT_COLOR))
 
     legend.append(render_colored_block_string(COLORWAYS[-1][4])[0][0] + " " +
@@ -185,9 +185,6 @@ def determine_color_for(gad, quartiles):
     color depends on where the number of commits on gad falls with respect to
     the provided quartiles.
     """
-    assert len(gad[1].keys()) < len(COLORWAYS), \
-        "Too many repositories for the available colorways."
-
     repo_color_key = list(gad[1].keys())
     active_repo = ""
     colorway = 0
@@ -202,7 +199,7 @@ def determine_color_for(gad, quartiles):
     if not only1(gad[1].values()):
         colorway = len(COLORWAYS) - 1
     else:
-        colorway = repo_color_key.index(active_repo)
+        colorway = repo_color_key.index(active_repo) % (len(COLORWAYS) - 1)
 
     if total_commits == 0:
         color_index = 0
