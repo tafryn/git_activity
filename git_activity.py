@@ -167,12 +167,14 @@ def auto_detect_top_authors(repositories, since, quantity):
         auto_detected_authors.remove(u'')
     return auto_detected_authors
 
-def generate_legend(repositories):
+def generate_legend(repositories, gads):
     """Generate a legend for the provided list of repositories."""
     legend = []
+    active_repos = active_repositories(repositories, gads)
     for index, value in enumerate({repo: 0 for repo in repositories}.keys()):
-        legend.append(render_colored_block_string(COLORWAYS[index % (len(COLORWAYS) - 1)][4])[0][0] + " " +
-                      colorize_string(os.path.basename(value.rstrip('/')), DEFAULT_COLOR))
+        if value in active_repos:
+            legend.append(render_colored_block_string(COLORWAYS[index % (len(COLORWAYS) - 1)][4])[0][0] + " " +
+                        colorize_string(os.path.basename(value.rstrip('/')), DEFAULT_COLOR))
 
     legend.append(render_colored_block_string(COLORWAYS[-1][4])[0][0] + " " +
                   colorize_string("multiple", DEFAULT_COLOR))
@@ -362,6 +364,18 @@ def daily_commit_counts(gads):
     total_commits_per_day = [sum(x[1].values()) for x in flat_gads]
     return [commits for commits in total_commits_per_day if commits != 0]
 
+def active_repositories(repositories, gads):
+    """Return the subset of repositories that have commits in gads."""
+    total_activity = {}
+    for repo in repositories:
+        total_activity[repo] = 0
+    for weeks in gads.values():
+        flat_activity = [ day[1] for week in weeks for day in week ]
+        for repo_activity in flat_activity:
+            for repo in repositories:
+                total_activity[repo] += repo_activity[repo]
+    return [ x for x in total_activity.keys() if total_activity[x] > 0 ]
+
 def calculate_quartiles(list_of_numbers):
     """Returns the 1st, 2nd, and 3rd quartile of a list of ints as a tuple."""
     if list_of_numbers:
@@ -522,7 +536,7 @@ def main():
 
     if args.legend:
         authors.append(colorize_string("Legend", 255))
-        rendered_gad_months.append(generate_legend(repositories))
+        rendered_gad_months.append(generate_legend(repositories, gads_by_author))
 
     time_period_label = str(time_period[0][0]) + " to " + str(time_period[-1][-1])
 
