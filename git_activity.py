@@ -34,14 +34,14 @@ TODAY = datetime.date.today()
 DUMMY_GAD = (TODAY, {'~/path_one': 0, '~/path_two': 1, '~/path_three': 2})
 
 COLORWAYS = [
-    [236, 94, 136, 172, 208], # oranges
-    [236, 58, 100, 142, 184], # yellows
-    [236, 22, 28, 34, 40],    # greens
-    [236, 23, 30, 37, 44],    # cyans
-    [236, 53, 90, 127, 164],  # purples
-    [236, 17, 18, 19, 20],    # blues
-    [236, 52, 88, 124, 160],  # reds
-    [236, 238, 241, 248, 255],# grays
+    [236, 94, 136, 172, 208],   # oranges
+    [236, 58, 100, 142, 184],   # yellows
+    [236, 22, 28, 34, 40],      # greens
+    [236, 23, 30, 37, 44],      # cyans
+    [236, 53, 90, 127, 164],    # purples
+    [236, 17, 18, 19, 20],      # blues
+    [236, 52, 88, 124, 160],    # reds
+    [236, 238, 241, 248, 255],  # grays
 ]
 
 DEFAULT_COLOR = 244
@@ -49,8 +49,10 @@ DEFAULT_COLOR = 244
 MAX_HEIGHT = int(os.popen('stty size', 'r').read().split()[0])
 MAX_WIDTH = int(os.popen('stty size', 'r').read().split()[1])
 
-# Identity function for use in groupby calls
-_ = lambda x: x
+
+def id(x):
+    return x
+
 
 def non_ansi_len(input_string):
     """Calculate the length of input_string without ansi escape codes."""
@@ -61,10 +63,14 @@ def non_ansi_len(input_string):
     uncolor_string = non_ansi_string(input_string)
     return len(uncolor_string)
 
+
 def only1(iterable):
-    """Return true if only one of the elements of iterable is true and false otherwise."""
+    """Return true if only one of the elements of iterable is true and false
+       otherwise.
+    """
     i = iter(iterable)
     return any(i) and not any(i)
+
 
 def split_list_on(element, lst):
     """The equivalent of split for generic lists
@@ -82,17 +88,21 @@ def split_list_on(element, lst):
 
     return split_lists
 
+
 def diagonally_reflect(lst):
     """Reflect the supplied two dimensional list over the diagonal."""
     return [[list(column) for column in zip(*row)] for row in lst]
+
 
 def month_dates(year, month):
     """Return a list of weeks which are, in turn, lists of days."""
     return calendar.TextCalendar(calendar.SUNDAY).monthdatescalendar(year, month)
 
+
 def previous_month(date):
     """Return the last day of the month prior to date."""
     return date.replace(day=1) - datetime.timedelta(days=1)
+
 
 def join_date_months(preceding_month, current_month):
     """Join two lists of weeks of adjoining months."""
@@ -100,6 +110,7 @@ def join_date_months(preceding_month, current_month):
         return preceding_month + current_month
 
     return preceding_month[:-1] + current_month
+
 
 def last_n_weeks(date, num_weeks=1):
     """Return a list of the n weeks prior to date."""
@@ -120,6 +131,7 @@ def last_n_weeks(date, num_weeks=1):
 
     return current_weeks[len(current_weeks)-num_weeks:]
 
+
 def count_commits_for(repository_dir, num_weeks, author=""):
     """Tally up the commits to a git repository for the last num_weeks.
 
@@ -138,20 +150,24 @@ def count_commits_for(repository_dir, num_weeks, author=""):
     if commit_stamp_strings != [""]:
         commit_dates = [datetime.date.fromtimestamp(int(x.replace('"', '')))
                         for x in commit_stamp_strings]
-        for commit_date in [list(date_group[1]) for date_group in groupby(commit_dates, _)]:
+        for commit_date in [list(date_group[1]) for date_group in groupby(commit_dates, id)]:
             commits_counted_by_date[commit_date[0]] = len(commit_date)
 
     return commits_counted_by_date
 
+
 def fetch_commits(repository_dirs, verbose):
     """Fetch any available commits for the supplied list of repositories."""
     for repository_dir in repository_dirs:
-        git_repo = git.Repo(os.path.expanduser(repository_dir), search_parent_directories=True)
+        git_repo = git.Repo(os.path.expanduser(repository_dir),
+                            search_parent_directories=True)
         for remote in git_repo.remotes:
             if verbose >= 1:
-                print ("Fetching commits for " + os.path.basename(git_repo.working_dir) \
-                        + ":" + remote.name).encode('utf-8')
+                print("Fetching commits for "
+                      + os.path.basename(git_repo.working_dir)
+                      + ":" + remote.name).encode('utf-8')
             remote.fetch()
+
 
 def auto_detect_top_authors(repositories, since, quantity):
     """Automatically detect the top five contributors for each repository."""
@@ -167,6 +183,7 @@ def auto_detect_top_authors(repositories, since, quantity):
         auto_detected_authors.remove(u'')
     return auto_detected_authors
 
+
 def generate_legend(repositories, gads):
     """Generate a legend for the provided list of repositories."""
     legend = []
@@ -179,6 +196,7 @@ def generate_legend(repositories, gads):
     legend.append(render_colored_block_string(COLORWAYS[-1][4])[0][0] + " " +
                   colorize_string("multiple", DEFAULT_COLOR))
     return "\n".join(legend)
+
 
 def determine_color_for(gad, quartiles):
     """Return the appropriate color for the total number of commits on gad.
@@ -216,12 +234,15 @@ def determine_color_for(gad, quartiles):
 
     return COLORWAYS[colorway][color_index]
 
+
 def colorize_string(string, color, default=DEFAULT_COLOR):
     """Add color codes to the provided string"""
     return fg(color) + string + fg(default)
 
+
 def render_numeric_string(number, color=1):
-    """Return a numeric string represeting the totoal number of commits on gad."""
+    """Return a numeric string represeting the totoal number of commits on gad.
+    """
     if number > 99:
         rendered_string = "**"
     elif number > 0:
@@ -230,6 +251,7 @@ def render_numeric_string(number, color=1):
         rendered_string = "--"
 
     return [[colorize_string(rendered_string, color)]]
+
 
 def render_colored_block_string(color=1, emphasize=False):
     """Return a colored block.
@@ -243,13 +265,16 @@ def render_colored_block_string(color=1, emphasize=False):
 
     return [[colorize_string(block, color)]]
 
+
 def render_numeric_gad(gad, quartiles):
     """Return a numeric string representing the gad."""
     return render_numeric_string(sum(gad[1].values()), determine_color_for(gad, quartiles))
 
+
 def render_colored_block_gad(gad, quartiles):
     """Return a colored block representing the gad."""
     return render_colored_block_string(determine_color_for(gad, quartiles))
+
 
 def render_gads(gad_weeks, gad_render_func, quartiles=(1, 3, 5)):
     """Return a multiline string representing the gads in gad_weeks."""
@@ -269,6 +294,7 @@ def render_gads(gad_weeks, gad_render_func, quartiles=(1, 3, 5)):
 
     return rendered_string_list
 
+
 def render_author(author_string, gad_counts, display_mode, show_total):
     """Return a name string with an optional total determined by the display_mode."""
     width_limit = MAX_WIDTH - 5
@@ -283,6 +309,7 @@ def render_author(author_string, gad_counts, display_mode, show_total):
         author_string = author_string[:width_limit - len(trailing_text)]
 
     return colorize_string(author_string + " " + colorize_string(trailing_text, DEFAULT_COLOR), 255)
+
 
 def render_author_gads(author_gads, gads_render_func, author_render_func, orientation):
     """Return a pair of lists of rendered authors and gads."""
@@ -304,6 +331,7 @@ def render_author_gads(author_gads, gads_render_func, author_render_func, orient
         exit(1)
 
     return (authors, unboxed_gads)
+
 
 def display_tabled_gads(authors, rendered_gad_months, title, border, width=0):
     """Display a table of gads per author according to gads_render_func."""
@@ -335,6 +363,7 @@ def display_tabled_gads(authors, rendered_gad_months, title, border, width=0):
     sys.stdout.write(fg(DEFAULT_COLOR))
     print display_table.table.encode('utf-8'), attr(0).encode('utf-8')
 
+
 def merge_rendered_gads(rendered_gads):
     """Merge the 2d list of rendered gads into a single string."""
     return ["\n".join(
@@ -342,6 +371,7 @@ def merge_rendered_gads(rendered_gads):
             [char for box in week for char in box])
          for week in gads])
             for gads in rendered_gads]
+
 
 def adjust_month_label_spacing(gad_month_string):
     """Correct the spacing for the month labels in horizontally rendered gad_months.
@@ -351,12 +381,13 @@ def adjust_month_label_spacing(gad_month_string):
     first_re = re.compile(r"^((.*\n)+)(.*)$", re.MULTILINE)
     first_match = first_re.match(gad_month_string)
     element_width = non_ansi_len(first_match.groups()[1].split(" ")[0])
-    overrun = 3 - element_width # 3 is the width of the month labels
+    overrun = 3 - element_width  # 3 is the width of the month labels
     month_line = re.findall(r"\s+|\w+", first_match.groups()[2])
     mod_month_line = month_line[:1] \
-            + [x[:-overrun] if re.match(r"\s+", x) else x for x in month_line[1:]]
+        + [x[:-overrun] if re.match(r"\s+", x) else x for x in month_line[1:]]
     mod_month_line = ["  " if len(x) < element_width else x for x in mod_month_line]
     return first_match.groups()[0] + "".join(mod_month_line)
+
 
 def daily_commit_counts(gads):
     """Flatten a list of gads by week and return a list of total commits on each day."""
@@ -364,17 +395,19 @@ def daily_commit_counts(gads):
     total_commits_per_day = [sum(x[1].values()) for x in flat_gads]
     return [commits for commits in total_commits_per_day if commits != 0]
 
+
 def active_repositories(repositories, gads):
     """Return the subset of repositories that have commits in gads."""
     total_activity = {}
     for repo in repositories:
         total_activity[repo] = 0
     for weeks in gads.values():
-        flat_activity = [ day[1] for week in weeks for day in week ]
+        flat_activity = [day[1] for week in weeks for day in week]
         for repo_activity in flat_activity:
             for repo in repositories:
                 total_activity[repo] += repo_activity[repo]
-    return [ x for x in total_activity.keys() if total_activity[x] > 0 ]
+    return [x for x in total_activity.keys() if total_activity[x] > 0]
+
 
 def calculate_quartiles(list_of_numbers):
     """Returns the 1st, 2nd, and 3rd quartile of a list of ints as a tuple."""
@@ -387,6 +420,7 @@ def calculate_quartiles(list_of_numbers):
 
     return (0, 0, 0)
 
+
 def gad_zip(annotated_date, sum_commits, repo_dir):
     """Populate an annotated date with the number of commits for repo_dir."""
     count = 0
@@ -395,6 +429,7 @@ def gad_zip(annotated_date, sum_commits, repo_dir):
 
     annotated_date[1][repo_dir] = count
     return annotated_date
+
 
 def aggregate_gads(repositories, time_period, authors):
     """Calculate the gads for each author on each repository during the supplied time_period."""
@@ -420,12 +455,14 @@ def aggregate_gads(repositories, time_period, authors):
 
     return gads_per_repo
 
+
 def exception_handler(exception_type, exception, traceback, verbose, debug_hook=sys.excepthook):
     """Exception handler to suppress traceback in production."""
     if verbose:
         debug_hook(exception_type, exception, traceback)
     else:
-        print ("%s: %s" % (exception_type.__name__, exception)).encode('utf-8')
+        print("%s: %s" % (exception_type.__name__, exception)).encode('utf-8')
+
 
 def positive_int(value):
     """Argparse handler for positive int types."""
@@ -433,6 +470,7 @@ def positive_int(value):
     if ivalue <= 0:
         raise argparse.ArgumentTypeError("%s is an invalid positive int value" % value)
     return ivalue
+
 
 def main():
     """Main method"""
@@ -548,6 +586,7 @@ def main():
                         colorize_string(time_period_label, 255),
                         args.border,
                         args.width)
+
 
 if __name__ == "__main__":
     main()
